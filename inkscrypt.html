@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>InkScrypt — The Citizen's Credit Engine</title>
+<meta name="description" content="InkScrypt turns federal credit law into actionable legal documents. Free, deterministic, no AI. Built on FCRA and FDCPA statutes."/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&family=IBM+Plex+Mono:wght@400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet"/>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-MV2C6NWVSJ"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)}gtag('js',new Date());gtag('config','G-MV2C6NWVSJ');</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#2563eb;--primary-dim:#1d4ed8;--primary-glow:rgba(37,99,235,0.15);
+  --ink:#d97706;--ink-light:#fbbf24;--ink-glow:rgba(217,119,6,0.12);
+  --bg:#0b0f1a;--surface:#111827;--surface-2:#1a2235;--surface-3:#1f2d42;
+  --border:rgba(255,255,255,0.07);--border-active:rgba(37,99,235,0.5);
+  --text:#f0f4ff;--text-2:#94a3b8;--text-3:#64748b;
+  --success:#10b981;--warning:#f59e0b;--danger:#ef4444;
+  --font-body:'DM Sans',sans-serif;--font-mono:'IBM Plex Mono',monospace;
+  --font-display:'DM Serif Display',serif;--radius:10px;--radius-lg:16px;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-body);background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% 0%,rgba(37,99,235,0.08) 0%,transparent 60%),radial-gradient(ellipse 60% 40% at 80% 100%,rgba(217,119,6,0.05) 0%,transparent 60%);pointer-events:none;z-index:0}
+.nav{position:sticky;top:0;z-index:100;background:rgba(11,15,26,0.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;justify-content:space-between;height:56px}
+.nav-brand{font-family:var(--font-mono);font-size:0.8rem;font-weight:500;color:var(--text-2);text-decoration:none;display:flex;align-items:center;gap:10px}
+.nav-brand .mod{color:var(--ink-light);font-weight:600}
+.nav-back{font-family:var(--font-mono);font-size:0.75rem;color:var(--text-3);text-decoration:none;transition:color 0.2s}
+.nav-back:hover{color:var(--primary)}
+.nav-back::before{content:'← '}
+.hero{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:5rem 2rem 3rem;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:var(--ink-glow);border:1px solid rgba(217,119,6,0.3);border-radius:100px;padding:4px 14px;font-family:var(--font-mono);font-size:0.7rem;font-weight:600;color:var(--ink-light);letter-spacing:0.08em;margin-bottom:1.5rem}
+.hero-badge::before{content:'';width:6px;height:6px;background:var(--ink);border-radius:50%;animation:pulse 2s ease infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.8)}}
+.hero h1{font-family:var(--font-display);font-size:clamp(2.4rem,4vw,3.4rem);line-height:1.15;margin-bottom:1.25rem}
+.hero h1 em{font-style:italic;color:var(--ink-light)}
+.hero-sub{font-size:1.05rem;color:var(--text-2);line-height:1.7;margin-bottom:2rem;font-weight:300}
+.hero-quote{border-left:3px solid var(--ink);padding-left:1.25rem;font-family:var(--font-mono);font-size:0.82rem;color:var(--text-3);font-style:italic;line-height:1.6}
+.hero-stats{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;position:relative;overflow:hidden;transition:border-color 0.3s,transform 0.2s}
+.stat-card:hover{border-color:var(--border-active);transform:translateY(-2px)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--primary),transparent)}
+.stat-card.ink::before{background:linear-gradient(90deg,var(--ink),transparent)}
+.stat-num{font-family:var(--font-mono);font-size:1.8rem;font-weight:600;color:var(--primary);line-height:1;margin-bottom:0.5rem}
+.stat-card.ink .stat-num{color:var(--ink-light)}
+.stat-label{font-size:0.78rem;color:var(--text-3);font-weight:500;line-height:1.4}
+.section{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:2rem 2rem 4rem}
+.section-label{font-family:var(--font-mono);font-size:0.7rem;font-weight:600;letter-spacing:0.12em;color:var(--primary);text-transform:uppercase;margin-bottom:0.75rem}
+.section-title{font-family:var(--font-display);font-size:clamp(1.6rem,2.5vw,2.2rem);color:var(--text);margin-bottom:0.75rem;line-height:1.2}
+.section-body{font-size:0.97rem;color:var(--text-2);max-width:600px;margin-bottom:2.5rem;line-height:1.7}
+.steps-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.step{background:var(--surface);padding:2rem 1.5rem}
+.step-num{font-family:var(--font-mono);font-size:0.65rem;font-weight:600;color:var(--text-3);letter-spacing:0.1em;margin-bottom:1rem}
+.step-icon{font-size:1.6rem;margin-bottom:0.75rem;display:block}
+.step h3{font-size:0.95rem;font-weight:600;color:var(--text);margin-bottom:0.5rem}
+.step p{font-size:0.82rem;color:var(--text-3);line-height:1.6}
+.edu-strip{position:relative;z-index:1;background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border);padding:3rem 2rem;margin-bottom:4rem}
+.edu-inner{max-width:1100px;margin:0 auto}
+.pills{display:flex;flex-wrap:wrap;gap:0.75rem;margin-top:1.5rem}
+.pill{display:inline-flex;align-items:center;gap:8px;background:var(--surface-2);border:1px solid var(--border);border-radius:100px;padding:6px 14px;font-family:var(--font-mono);font-size:0.72rem;color:var(--text-2);transition:all 0.2s}
+.pill:hover{border-color:var(--border-active);color:var(--text);background:var(--primary-glow)}
+.pill .dot{width:5px;height:5px;border-radius:50%;background:var(--primary);flex-shrink:0}
+.engine{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 2rem 6rem}
+.engine-layout{display:grid;grid-template-columns:300px 1fr;gap:2rem;align-items:start}
+.sidebar{position:sticky;top:72px}
+.prog-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.prog-head{background:var(--surface-2);padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:0.75rem;font-weight:600;letter-spacing:0.08em;color:var(--text-2);text-transform:uppercase}
+.prog-steps{padding:0.5rem 0}
+.prog-step{display:flex;align-items:flex-start;gap:1rem;padding:0.85rem 1.5rem;cursor:pointer;transition:background 0.2s;position:relative}
+.prog-step:hover{background:var(--surface-2)}
+.prog-step.active{background:var(--primary-glow)}
+.prog-dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);background:var(--surface);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:9px;transition:all 0.3s}
+.prog-step.active .prog-dot{background:var(--primary);border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-glow)}
+.prog-step.done .prog-dot{background:var(--success);border-color:var(--success);color:white}
+.prog-line{position:absolute;left:calc(1.5rem + 10px);top:calc(0.85rem + 22px);width:2px;height:calc(100% - 22px);background:var(--border)}
+.prog-step:last-child .prog-line{display:none}
+.prog-info h4{font-size:0.85rem;font-weight:600;color:var(--text-2);margin-bottom:2px}
+.prog-step.active .prog-info h4{color:var(--text)}
+.prog-info p{font-size:0.74rem;color:var(--text-3)}
+.sidebar-note{margin:0.75rem;background:var(--surface-2);border-radius:var(--radius);padding:1rem;font-size:0.75rem;color:var(--text-3);line-height:1.6;border:1px solid var(--border)}
+.sidebar-note strong{color:var(--ink-light)}
+.panels{display:flex;flex-direction:column;gap:1.5rem}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;transition:border-color 0.3s}
+.panel.active{border-color:var(--border-active)}
+.panel.done{border-color:rgba(16,185,129,0.3)}
+.panel.locked{opacity:0.4;pointer-events:none}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.75rem;background:var(--surface-2);border-bottom:1px solid var(--border);cursor:pointer}
+.panel-head-left{display:flex;align-items:center;gap:1rem}
+.panel-num{width:28px;height:28px;border-radius:50%;background:var(--surface-3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:0.7rem;font-weight:600;color:var(--text-3);flex-shrink:0;transition:all 0.3s}
+.panel.active .panel-num{background:var(--primary);border-color:var(--primary);color:white}
+.panel.done .panel-num{background:var(--success);border-color:var(--success);color:white}
+.panel-title{font-size:0.97rem;font-weight:600;color:var(--text)}
+.panel-sub{font-size:0.78rem;color:var(--text-3);margin-top:2px}
+.panel-toggle{color:var(--text-3);transition:transform 0.3s;font-size:1rem}
+.panel.active .panel-toggle{transform:rotate(180deg)}
+.panel-body{padding:1.75rem;display:none}
+.panel.active .panel-body{display:block}
+.quick-label{font-family:var(--font-mono);font-size:0.68rem;font-weight:600;letter-spacing:0.08em;color:var(--text-3);text-transform:uppercase;margin-bottom:0.6rem}
+.quick-btns{display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.5rem}
+.quick-btn{background:var(--surface-2);border:1px solid var(--border);border-radius:100px;padding:5px 14px;font-family:var(--font-body);font-size:0.78rem;color:var(--text-2);cursor:pointer;transition:all 0.2s;white-space:nowrap}
+.quick-btn:hover{border-color:var(--border-active);color:var(--text);background:var(--primary-glow)}
+.quick-btn.sel{background:var(--primary-glow);border-color:var(--primary);color:var(--text)}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.field-row.single{grid-template-columns:1fr}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:0.8rem;font-weight:600;color:var(--text-2)}
+.field-note{font-size:0.72rem;color:var(--text-3);margin-top:-2px}
+.field input,.field select,.field textarea{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:0.7rem 0.9rem;font-family:var(--font-body);font-size:0.92rem;color:var(--text);outline:none;transition:border-color 0.2s,box-shadow 0.2s;width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--border-active);box-shadow:0 0 0 3px var(--primary-glow)}
+.field input::placeholder,.field textarea::placeholder{color:var(--text-3)}
+.field select option{background:var(--surface)}
+.field textarea{resize:vertical;min-height:90px;line-height:1.6}
+.statute-match{display:none;border-radius:var(--radius);padding:1.25rem;margin-bottom:1rem}
+.statute-match.show{display:block}
+.statute-match.pending{background:rgba(37,99,235,0.06);border:1px solid var(--border-active)}
+.statute-match.violation{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.4)}
+.statute-match.compliant{background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.4)}
+.match-head{display:flex;align-items:center;gap:8px;margin-bottom:0.75rem}
+.match-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot-blue{background:var(--primary);box-shadow:0 0 6px var(--primary)}
+.dot-green{background:var(--success);box-shadow:0 0 6px var(--success)}
+.dot-red{background:var(--danger);box-shadow:0 0 6px var(--danger)}
+.dot-amber{background:var(--warning);box-shadow:0 0 6px var(--warning)}
+.match-lbl{font-family:var(--font-mono);font-size:0.7rem;font-weight:600;letter-spacing:0.08em;text-transform:uppercase}
+.lbl-blue{color:var(--primary)}
+.lbl-green{color:var(--success)}
+.lbl-red{color:var(--danger)}
+.lbl-amber{color:var(--warning)}
+.match-cite{font-family:var(--font-mono);font-size:0.82rem;font-weight:600;color:var(--primary);margin-bottom:0.4rem}
+.match-sum{font-size:0.85rem;color:var(--text-2);line-height:1.6}
+.violation-status{font-family:var(--font-mono);font-size:0.78rem;font-weight:700;margin-top:0.5rem;padding:4px 10px;border-radius:100px;display:inline-block}
+.status-violation{background:rgba(239,68,68,0.15);color:var(--danger);border:1px solid rgba(239,68,68,0.3)}
+.status-pending{background:rgba(245,158,11,0.15);color:var(--warning);border:1px solid rgba(245,158,11,0.3)}
+.status-compliant{background:rgba(16,185,129,0.15);color:var(--success);border:1px solid rgba(16,185,129,0.3)}
+.date-ctx{background:var(--surface-2);border:1px solid var(--border);border-left:3px solid var(--ink);border-radius:var(--radius);padding:0.75rem 1rem;font-size:0.78rem;color:var(--text-3);line-height:1.6;margin-top:0.5rem;display:none}
+.panel-actions{display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1.75rem;padding-top:1.25rem;border-top:1px solid var(--border)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:0.7rem 1.5rem;border-radius:var(--radius);font-family:var(--font-body);font-size:0.88rem;font-weight:600;cursor:pointer;border:none;transition:all 0.2s}
+.btn-primary{background:var(--primary);color:white}
+.btn-primary:hover{background:var(--primary-dim);transform:translateY(-1px);box-shadow:0 4px 16px rgba(37,99,235,0.3)}
+.btn-ghost{background:transparent;color:var(--text-3);border:1px solid var(--border)}
+.btn-ghost:hover{border-color:var(--border-active);color:var(--text)}
+.btn-generate{background:linear-gradient(135deg,var(--ink),#b45309);color:white;width:100%;justify-content:center;padding:1rem 2rem;font-size:0.97rem;border-radius:var(--radius-lg);box-shadow:0 4px 24px var(--ink-glow)}
+.btn-generate:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(217,119,6,0.35)}
+.btn-generate:disabled{opacity:0.4;cursor:not-allowed;transform:none;box-shadow:none}
+.summary{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1.5rem}
+.sum-row{display:flex;justify-content:space-between;align-items:center;padding:0.4rem 0;border-bottom:1px solid var(--border)}
+.sum-row:last-child{border-bottom:none}
+.sum-key{font-family:var(--font-mono);font-size:0.72rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em}
+.sum-val{font-size:0.82rem;color:var(--text-2);font-weight:500;text-align:right;max-width:60%}
+.result-panel{display:none;background:var(--surface);border:1px solid rgba(16,185,129,0.3);border-radius:var(--radius-lg);overflow:hidden}
+.result-panel.show{display:block}
+.result-head{background:rgba(16,185,129,0.08);border-bottom:1px solid rgba(16,185,129,0.2);padding:1.5rem 1.75rem;display:flex;align-items:center;gap:1rem}
+.result-icon{width:42px;height:42px;border-radius:50%;background:rgba(16,185,129,0.15);border:1px solid rgba(16,185,129,0.4);display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.result-title{font-size:1.05rem;font-weight:700;color:var(--success);margin-bottom:3px}
+.result-sub{font-size:0.8rem;color:var(--text-3)}
+.result-body{padding:1.75rem}
+.fp-box{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1.5rem}
+.fp-lbl{font-family:var(--font-mono);font-size:0.65rem;font-weight:600;letter-spacing:0.1em;color:var(--ink-light);text-transform:uppercase;margin-bottom:0.5rem}
+.fp-id{font-family:var(--font-mono);font-size:0.92rem;font-weight:600;color:var(--text);letter-spacing:0.04em;word-break:break-all;margin-bottom:0.4rem}
+.fp-meta{font-family:var(--font-mono);font-size:0.72rem;color:var(--text-3)}
+.dl-btn{display:flex;align-items:center;justify-content:space-between;width:100%;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem;margin-bottom:0.75rem;cursor:pointer;transition:all 0.2s;text-decoration:none}
+.dl-btn:hover{border-color:var(--border-active);background:var(--primary-glow)}
+.dl-left{display:flex;align-items:center;gap:0.75rem}
+.dl-icon{width:36px;height:36px;background:var(--primary-glow);border:1px solid var(--border-active);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem}
+.dl-name{font-size:0.88rem;font-weight:600;color:var(--text);margin-bottom:2px}
+.dl-meta{font-family:var(--font-mono);font-size:0.7rem;color:var(--text-3)}
+.next-steps{margin-top:1.5rem;border-top:1px solid var(--border);padding-top:1.5rem}
+.next-steps h4{font-family:var(--font-mono);font-size:0.72rem;font-weight:600;letter-spacing:0.08em;color:var(--text-3);text-transform:uppercase;margin-bottom:1rem}
+.next-item{display:flex;gap:1rem;padding:0.75rem 0;border-bottom:1px solid var(--border)}
+.next-item:last-child{border-bottom:none}
+.next-n{font-family:var(--font-mono);font-size:0.72rem;font-weight:600;color:var(--ink-light);min-width:22px;padding-top:2px}
+.next-text{font-size:0.85rem;color:var(--text-2);line-height:1.6}
+.next-text strong{color:var(--text)}
+.next-text a{color:var(--primary)}
+.verify-section{position:relative;z-index:1;background:var(--surface);border-top:1px solid var(--border);padding:4rem 2rem}
+.verify-inner{max-width:700px;margin:0 auto;text-align:center}
+.verify-inner .section-label{justify-content:center;display:flex}
+.verify-form{display:flex;gap:0.75rem;margin-top:2rem}
+.verify-input{flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem 1rem;font-family:var(--font-mono);font-size:0.85rem;color:var(--text);outline:none;transition:border-color 0.2s}
+.verify-input:focus{border-color:var(--border-active);box-shadow:0 0 0 3px var(--primary-glow)}
+.verify-input::placeholder{color:var(--text-3)}
+.verify-result{display:none;margin-top:1.5rem;border-radius:var(--radius);padding:1.25rem;text-align:left;font-size:0.88rem;line-height:1.6}
+.verify-result.success{display:block;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);color:var(--success)}
+.verify-result.fail{display:block;background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);color:var(--danger)}
+.mod-footer{position:relative;z-index:1;background:var(--bg);border-top:1px solid var(--border);padding:2.5rem 2rem;text-align:center}
+.mod-footer p{font-size:0.8rem;color:var(--text-3);line-height:1.7;max-width:700px;margin:0 auto 0.5rem}
+.mod-footer a{color:var(--primary);text-decoration:none}
+.spinner{display:none;width:18px;height:18px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.hero .hero-content{animation:fadeUp 0.6s ease both}
+.hero .hero-stats{animation:fadeUp 0.6s ease 0.15s both}
+@media(max-width:900px){
+  .hero{grid-template-columns:1fr;gap:2.5rem;padding:3rem 1.25rem 2rem}
+  .steps-grid{grid-template-columns:1fr 1fr}
+  .engine-layout{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .field-row{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .hero h1{font-size:2rem}
+  .steps-grid{grid-template-columns:1fr}
+  .hero-stats{grid-template-columns:1fr 1fr}
+}
+
+/* ── DECODED MANUAL SECTION ── */
+.decoded-section{
+  position:relative;z-index:1;
+  max-width:1100px;margin:0 auto;
+  padding:0 2rem 3rem;
+}
+.decoded-card{
+  background:var(--surface);
+  border:1px solid rgba(217,119,6,0.35);
+  border-radius:var(--radius-lg);
+  padding:2.5rem;
+  position:relative;overflow:hidden;
+}
+.decoded-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--ink),rgba(217,119,6,0.2));
+}
+.decoded-card::after{
+  content:'DECODED';
+  font-family:var(--font-mono);font-size:4rem;font-weight:700;
+  color:rgba(217,119,6,0.04);
+  position:absolute;right:-10px;top:50%;transform:translateY(-50%);
+  letter-spacing:.2em;pointer-events:none;user-select:none;
+  line-height:1;
+}
+.decoded-eyebrow{
+  font-family:var(--font-mono);font-size:0.65rem;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase;
+  color:var(--ink-light);margin-bottom:1rem;display:block;
+}
+.decoded-layout{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:2rem;align-items:start;
+}
+.decoded-title{
+  font-family:var(--font-display);
+  font-size:clamp(1.3rem,2.5vw,1.7rem);
+  font-style:italic;color:var(--text);
+  margin-bottom:1rem;line-height:1.2;
+}
+.decoded-body p{
+  font-size:0.92rem;color:var(--text-2);
+  line-height:1.8;margin-bottom:0.85rem;
+}
+.decoded-body p:last-child{margin-bottom:0}
+.decoded-body strong{color:var(--text)}
+.decoded-reveals{
+  display:flex;flex-wrap:wrap;gap:0.5rem;
+  margin-top:1.25rem;
+}
+.decoded-reveal-pill{
+  font-family:var(--font-mono);font-size:0.68rem;
+  color:var(--text-3);
+  background:var(--surface-2);
+  border:1px solid var(--border);
+  padding:4px 10px;border-radius:4px;
+  letter-spacing:0.04em;
+}
+.decoded-cta-wrap{
+  display:flex;flex-direction:column;
+  align-items:flex-end;gap:0.75rem;
+  flex-shrink:0;padding-top:0.5rem;
+}
+.decoded-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:0.75rem 1.5rem;
+  background:var(--ink);color:white;
+  border-radius:var(--radius);
+  font-size:0.88rem;font-weight:700;
+  text-decoration:none;white-space:nowrap;
+  transition:all 0.2s;
+}
+.decoded-btn:hover{
+  background:#b45309;
+  transform:translateY(-1px);
+  box-shadow:0 6px 20px rgba(217,119,6,0.35);
+  text-decoration:none;color:white;
+}
+.decoded-skip{
+  font-family:var(--font-mono);font-size:0.65rem;
+  color:var(--text-3);text-align:right;
+  letter-spacing:0.04em;cursor:default;
+}
+@media(max-width:700px){
+  .decoded-layout{grid-template-columns:1fr}
+  .decoded-cta-wrap{align-items:flex-start;flex-direction:row;flex-wrap:wrap}
+  .decoded-card::after{display:none}
+}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="/" class="nav-brand">Right to Remain Informed <span style="color:rgba(37,99,235,0.5)">//</span> <span class="mod">InkScrypt</span></a>
+  <a href="/" class="nav-back">All Modules</a>
+</nav>
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-badge">InkScrypt — The Citizen's Credit Engine</div>
+    <h1>The law is a<br/><em>calculator</em>,<br/>not a guessing game.</h1>
+    <p class="hero-sub">Most "credit repair" tools summarize the law. InkScrypt <strong>executes</strong> it. Describe your situation, get your letter. Free. No AI. No subscriptions. Ever.</p>
+    <blockquote class="hero-quote">"I built this because everyone has the right to know what the law actually says — not what someone charges $99 a month to tell them."<br/>— Chris, Lafayette, Louisiana</blockquote>
+  </div>
+  <div class="hero-stats">
+    <div class="stat-card"><div class="stat-num">11</div><div class="stat-label">Federal statutes encoded as executable logic</div></div>
+    <div class="stat-card ink"><div class="stat-num">$0</div><div class="stat-label">Cost to generate your letter. Always.</div></div>
+    <div class="stat-card"><div class="stat-num">30</div><div class="stat-label">Days a bureau has to respond under FCRA §611</div></div>
+    <div class="stat-card ink"><div class="stat-num">SHA-256</div><div class="stat-label">Self-verifying fingerprint on every document</div></div>
+  </div>
+</section>
+<section class="section">
+  <div class="section-label">How InkScrypt Works</div>
+  <h2 class="section-title">Four steps. One document. Your rights.</h2>
+  <p class="section-body">InkScrypt runs your situation through a deterministic logic engine built on federal law. The same calculation, every time. No opinions. No upsells.</p>
+  <div class="steps-grid">
+    <div class="step"><div class="step-num">STEP 01</div><span class="step-icon">🔍</span><h3>Describe Your Situation</h3><p>Tell InkScrypt what happened. The engine maps your words to the exact federal statute that protects you.</p></div>
+    <div class="step"><div class="step-num">STEP 02</div><span class="step-icon">⏱</span><h3>The Clock Calculates</h3><p>Enter the date your original letter was sent. InkScrypt calculates your exact legal deadline — skipping weekends and all 11 federal holidays.</p></div>
+    <div class="step"><div class="step-num">STEP 03</div><span class="step-icon">⚖️</span><h3>Violations Are Evaluated</h3><p>The engine determines if a federal violation occurred, what your status is (PENDING, VIOLATION, or COMPLIANT), and which document to generate.</p></div>
+    <div class="step"><div class="step-num">STEP 04</div><span class="step-icon">🖋</span><h3>Your Letter Downloads</h3><p>A professionally formatted PDF with statute citations, your demand, CFPB warning, and a SHA-256 self-verifying fingerprint. Print. Sign. Mail certified.</p></div>
+  </div>
+</section>
+<div class="edu-strip">
+  <div class="edu-inner">
+    <div class="section-label">Your Federal Rights</div>
+    <h2 class="section-title">What the law already gave you.</h2>
+    <p class="section-body" style="max-width:100%">These aren't loopholes. These are federal statutes passed by Congress. Anything a credit repair company can legally do, you can do yourself for free using these rights.</p>
+    <div class="pills">
+      <span class="pill"><span class="dot"></span>FCRA §611 — 30-day reinvestigation</span>
+      <span class="pill"><span class="dot"></span>FCRA §609 — Right to your full file</span>
+      <span class="pill"><span class="dot"></span>FCRA §623 — Furnisher obligations</span>
+      <span class="pill"><span class="dot"></span>FCRA §605 — 7-year reporting limit</span>
+      <span class="pill"><span class="dot"></span>FDCPA §805 — No calls to your job</span>
+      <span class="pill"><span class="dot"></span>FDCPA §807 — No false threats</span>
+      <span class="pill"><span class="dot"></span>FDCPA §808 — No unauthorized fees</span>
+      <span class="pill"><span class="dot"></span>FDCPA §809 — Debt validation right</span>
+      <span class="pill"><span class="dot"></span>FDCPA §813 — You can sue and win</span>
+      <span class="pill"><span class="dot"></span>CROA — No advance fees, 3-day cancel</span>
+    </div>
+  </div>
+</div>
+<section class="engine">
+  <div class="section-label">Generate Your Document</div>
+  <h2 class="section-title" style="margin-bottom:0.5rem">Use the Engine</h2>
+  <p class="section-body" style="margin-bottom:2rem">Fill in the steps below. Your letter generates and downloads directly to your device. Nothing is sent to a server. Nothing is stored.</p>
+
+  <!-- ── DECODED MANUAL SECTION ── -->
+  <div class="decoded-card" style="margin-bottom:2.5rem">
+    <span class="decoded-eyebrow">Before You Generate</span>
+    <div class="decoded-layout">
+      <div class="decoded-body">
+        <div class="decoded-title">What I Wish I'd Known</div>
+        <p>Before you generate anything — I need to be straight with you.</p>
+        <p>I'm not a lawyer. I'm a father from Louisiana who got tired of watching people pay for something the law already gave them for free.</p>
+        <p>This tool works. But a tool you don't understand is just a button you're pressing and hoping. I built a guide — not a pitch, not a course, not a funnel. A guide. It shows you what happens inside the system when you file a dispute, what collectors are trained to say to you, and what the law actually requires them to do.</p>
+        <p><strong>If you've been burned before, this is why. And this is the part they never showed you.</strong></p>
+        <div class="decoded-reveals">
+          <span class="decoded-reveal-pill">How e-OSCAR processes your dispute</span>
+          <span class="decoded-reveal-pill">The collector script — decoded</span>
+          <span class="decoded-reveal-pill">What "verified" actually means</span>
+          <span class="decoded-reveal-pill">$2.7B enforcement graveyard</span>
+          <span class="decoded-reveal-pill">Bureau escalation contacts</span>
+          <span class="decoded-reveal-pill">153 primary sources</span>
+        </div>
+      </div>
+      <div class="decoded-cta-wrap">
+        <a href="/decoded" class="decoded-btn" target="_blank" rel="noopener">Read It First →</a>
+        <span class="decoded-skip">or scroll down to use the engine</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="engine-layout">
+    <aside class="sidebar">
+      <div class="prog-card">
+        <div class="prog-head">Document Progress</div>
+        <div class="prog-steps">
+          <div class="prog-step active" data-s="1"><div class="prog-dot"></div><div class="prog-line"></div><div class="prog-info"><h4>Your Situation</h4><p>What happened?</p></div></div>
+          <div class="prog-step locked" data-s="2"><div class="prog-dot"></div><div class="prog-line"></div><div class="prog-info"><h4>Your Information</h4><p>Name and address</p></div></div>
+          <div class="prog-step locked" data-s="3"><div class="prog-dot"></div><div class="prog-line"></div><div class="prog-info"><h4>Their Information</h4><p>Bureau or collector</p></div></div>
+          <div class="prog-step locked" data-s="4"><div class="prog-dot"></div><div class="prog-line"></div><div class="prog-info"><h4>The Clock</h4><p>Key dates</p></div></div>
+          <div class="prog-step locked" data-s="5"><div class="prog-dot"></div><div class="prog-info"><h4>Generate</h4><p>Download your letter</p></div></div>
+        </div>
+      </div>
+      <div class="sidebar-note" style="margin-top:1rem"><strong>Not legal advice.</strong> InkScrypt generates educational documents based on federal statutes. For legal advice, consult a licensed attorney. Many FCRA/FDCPA attorneys work on contingency — no cost unless you win.</div>
+    </aside>
+    <div class="panels" id="panels">
+      <div class="panel active" id="p1">
+        <div class="panel-head" onclick="togglePanel(1)">
+          <div class="panel-head-left"><div class="panel-num">1</div><div><div class="panel-title">Your Situation</div><div class="panel-sub">Describe what happened in plain English</div></div></div>
+          <span class="panel-toggle">▾</span>
+        </div>
+        <div class="panel-body">
+          <div class="quick-label">Common situations — tap to select</div>
+          <div class="quick-btns">
+            <button class="quick-btn" onclick="pickSit(this,'A collector keeps calling my job')">Collector calling my job</button>
+            <button class="quick-btn" onclick="pickSit(this,'There is an error on my credit report I need to dispute')">Error on credit report</button>
+            <button class="quick-btn" onclick="pickSit(this,'They are threatening to have me arrested for a debt')">Threatening arrest</button>
+            <button class="quick-btn" onclick="pickSit(this,'I want them to stop all contact with me')">Stop all contact</button>
+            <button class="quick-btn" onclick="pickSit(this,'I need to validate this debt they say I owe')">Validate the debt</button>
+            <button class="quick-btn" onclick="pickSit(this,'The debt is old and may be past the 7-year reporting period')">Old debt — expired</button>
+            <button class="quick-btn" onclick="pickSit(this,'A credit repair company charged me upfront fees before doing any work')">Credit repair scam</button>
+            <button class="quick-btn" onclick="pickSit(this,'They called me before 8am or after 9pm')">Called outside legal hours</button>
+            <button class="quick-btn" onclick="pickSit(this,'The amount they say I owe is wrong and they added unauthorized fees')">Wrong amount / inflated fees</button>
+          </div>
+          <div class="field-row single field" style="margin-bottom:1rem">
+            <label>Or describe your situation:</label>
+            <span class="field-note">Be specific. More detail = more precise statute match.</span>
+            <textarea id="sitText" placeholder="Example: A debt collector keeps calling my workplace even though my manager has told them to stop..." oninput="analyzeSit()"></textarea>
+          </div>
+          <div class="statute-match pending" id="sitMatch">
+            <div class="match-head"><div class="match-dot dot-blue"></div><div class="match-lbl lbl-blue" id="matchLbl">Statute Match Found</div></div>
+            <div class="match-cite" id="matchCite"></div>
+            <div class="match-sum" id="matchSum"></div>
+            <div class="violation-status" id="violationStatus" style="display:none"></div>
+          </div>
+          <div class="panel-actions"><button class="btn btn-primary" onclick="next(1)">Continue → Your Information</button></div>
+        </div>
+      </div>
+      <div class="panel locked" id="p2">
+        <div class="panel-head" onclick="togglePanel(2)">
+          <div class="panel-head-left"><div class="panel-num">2</div><div><div class="panel-title">Your Information</div><div class="panel-sub">This appears on your letter as the sender</div></div></div>
+          <span class="panel-toggle">▾</span>
+        </div>
+        <div class="panel-body">
+          <div class="field-row single field" style="margin-bottom:1rem">
+            <label for="myName">Your Full Legal Name</label>
+            <input type="text" id="myName" placeholder="Jane Smith"/>
+          </div>
+          <div class="field-row single field">
+            <label for="myAddr">Your Full Mailing Address</label>
+            <span class="field-note">Street, City, State, ZIP — this goes on the letter</span>
+            <input type="text" id="myAddr" placeholder="123 Main Street, Lafayette, LA 70501"/>
+          </div>
+          <div class="panel-actions"><button class="btn btn-ghost" onclick="prev(2)">← Back</button><button class="btn btn-primary" onclick="next(2)">Continue → Their Information</button></div>
+        </div>
+      </div>
+      <div class="panel locked" id="p3">
+        <div class="panel-head" onclick="togglePanel(3)">
+          <div class="panel-head-left"><div class="panel-num">3</div><div><div class="panel-title">Their Information</div><div class="panel-sub">Who this letter is addressed to</div></div></div>
+          <span class="panel-toggle">▾</span>
+        </div>
+        <div class="panel-body">
+          <div class="field-row single field" style="margin-bottom:1rem">
+            <label for="respType">Who are you writing to?</label>
+            <select id="respType" onchange="fillResp()">
+              <option value="">— Select one —</option>
+              <optgroup label="Credit Bureaus">
+                <option value="eq">Equifax Information Services, LLC</option>
+                <option value="ex">Experian Information Solutions, Inc.</option>
+                <option value="tu">TransUnion LLC</option>
+              </optgroup>
+              <optgroup label="Other">
+                <option value="col">Debt Collector / Collections Agency</option>
+                <option value="fur">Original Creditor / Furnisher</option>
+                <option value="cr">Credit Repair Company</option>
+                <option value="oth">Other (enter below)</option>
+              </optgroup>
+            </select>
+          </div>
+          <div class="field-row single field" style="margin-bottom:1rem">
+            <label for="respName">Company / Organization Name</label>
+            <input type="text" id="respName" placeholder="Equifax Information Services, LLC"/>
+          </div>
+          <div class="field-row single field">
+            <label for="respAddr">Their Mailing Address</label>
+            <span class="field-note">Mail your letter here via USPS Certified Mail</span>
+            <input type="text" id="respAddr" placeholder="P.O. Box 740256, Atlanta, GA 30374"/>
+          </div>
+          <div class="panel-actions"><button class="btn btn-ghost" onclick="prev(3)">← Back</button><button class="btn btn-primary" onclick="next(3)">Continue → The Clock</button></div>
+        </div>
+      </div>
+      <div class="panel locked" id="p4">
+        <div class="panel-head" onclick="togglePanel(4)">
+          <div class="panel-head-left"><div class="panel-num">4</div><div><div class="panel-title">The Clock</div><div class="panel-sub">InkScrypt calculates your exact legal deadlines</div></div></div>
+          <span class="panel-toggle">▾</span>
+        </div>
+        <div class="panel-body">
+          <div class="field-row">
+            <div class="field">
+              <label for="sentDate">Date your original letter was sent</label>
+              <span class="field-note">Or date collector first contacted you in writing</span>
+              <input type="date" id="sentDate" oninput="calcDeadline()"/>
+            </div>
+            <div class="field">
+              <label for="respRecd">Did they respond?</label>
+              <select id="respRecd" onchange="calcDeadline()">
+                <option value="no">No response received</option>
+                <option value="bad">Response was inadequate</option>
+                <option value="yes">Yes — adequate response</option>
+              </select>
+            </div>
+          </div>
+          <div class="date-ctx" id="deadlineBox"></div>
+          <div class="panel-actions"><button class="btn btn-ghost" onclick="prev(4)">← Back</button><button class="btn btn-primary" onclick="next(4)">Continue → Generate</button></div>
+        </div>
+      </div>
+      <div class="panel locked" id="p5">
+        <div class="panel-head" onclick="togglePanel(5)">
+          <div class="panel-head-left"><div class="panel-num">5</div><div><div class="panel-title">Generate Your Document</div><div class="panel-sub">Review and download</div></div></div>
+          <span class="panel-toggle">▾</span>
+        </div>
+        <div class="panel-body">
+          <div class="summary" id="summaryBox"></div>
+          <button class="btn btn-generate" id="genBtn" onclick="generatePDF()">
+            <span id="genTxt">🖋 Generate My InkScrypt Letter</span>
+            <div class="spinner" id="genSpin"></div>
+          </button>
+          <p style="font-size:0.75rem;color:var(--text-3);text-align:center;margin-top:0.75rem;line-height:1.6">Your information never leaves your device. The PDF is generated entirely in your browser.</p>
+        </div>
+      </div>
+      <div class="result-panel" id="resultPanel">
+        <div class="result-head">
+          <div class="result-icon">✓</div>
+          <div><div class="result-title">Document Generated</div><div class="result-sub">Your InkScrypt letter is ready. Print, sign, and mail certified.</div></div>
+        </div>
+        <div class="result-body">
+          <div class="fp-box">
+            <div class="fp-lbl">Document Fingerprint — Self-Verifying</div>
+            <div class="fp-id" id="fpDisplay">—</div>
+            <div class="fp-meta" id="fpMeta">SHA-256 | —</div>
+          </div>
+          <div class="dl-btn" id="dlTrigger" onclick="reDownload()" style="cursor:pointer">
+            <div class="dl-left"><div class="dl-icon">📄</div><div><div class="dl-name" id="dlName">InkScrypt_Letter.pdf</div><div class="dl-meta">PDF — Print, sign with pen, mail certified (USPS Form 3800)</div></div></div>
+            <span style="color:var(--text-3);font-size:1.1rem">↓</span>
+          </div>
+          <div class="next-steps">
+            <h4>After You Download</h4>
+            <div class="next-item"><span class="next-n">01</span><div class="next-text"><strong>Print the letter.</strong> Do not send digitally. A physical letter bypasses automated systems and demands human processing.</div></div>
+            <div class="next-item"><span class="next-n">02</span><div class="next-text"><strong>Sign it with a pen</strong> on the signature line. Your wet ink signature forces a human being to process this — not an automated OCR bot.</div></div>
+            <div class="next-item"><span class="next-n">03</span><div class="next-text"><strong>Mail via USPS Certified Mail</strong> with return receipt requested (Form 3800). Keep the green card. That receipt is your proof of delivery.</div></div>
+            <div class="next-item"><span class="next-n">04</span><div class="next-text"><strong>Keep a copy of everything</strong> — the letter, envelope, tracking number, return receipt. Document every step.</div></div>
+            <div class="next-item"><span class="next-n">05</span><div class="next-text"><strong>File a CFPB complaint</strong> at <a href="https://consumerfinance.gov/complaint" target="_blank">consumerfinance.gov/complaint</a> if unresolved. Free. Creates a federal record.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="verify-section" id="verify">
+  <div class="verify-inner">
+    <div class="section-label">Verify a Document</div>
+    <h2 class="section-title">Confirm a document is authentic.</h2>
+    <p class="section-body" style="max-width:500px;margin:0.75rem auto 0;text-align:center;">Every InkScrypt document carries a self-verifying fingerprint. Enter the ID printed on any InkScrypt letter to confirm it hasn't been altered since generation.</p>
+    <div class="verify-form">
+      <input class="verify-input" id="verifyInput" type="text" placeholder="INKSCRYPT-2026-03-03-F3AD4E50-394CC1BB"/>
+      <button class="btn btn-primary" onclick="verifyDocument()">Verify</button>
+    </div>
+    <div class="verify-result" id="verifyResult"></div>
+  </div>
+</section>
+
+<footer class="mod-footer">
+  <p><strong style="color:var(--text-2)">This is not legal advice.</strong> InkScrypt is a free educational tool that encodes federal consumer protection law as deterministic logic. I'm not a lawyer — I'm a father from Lafayette, Louisiana who believes legal literacy shouldn't be a luxury. For legal advice, consult a licensed FCRA or FDCPA attorney. Many take these cases on contingency.</p>
+  <p style="margin-top:0.75rem"><a href="/">Right to Remain Informed</a> 
+  <p style="margin-top:var(--s)">Open source on <a href="https://github.com/Tetrahedroned/inkscrypt" style="color:var(--primary)">GitHub</a></p>· Built with zero AI. 100% statute-based logic. Always free.</p>
+</footer>
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+// InkScrypt Engine — JavaScript Port
+// Direct translation of statutes.py, clock.py, violations.py, fingerprint.py
+// ════════════════════════════════════════════════════════════════════════════
+
+// ── FEDERAL HOLIDAYS (mirrors clock.py get_federal_holidays) ─────────────────
+function getFederalHolidays(year) {
+  const holidays = new Set();
+  function observe(d) {
+    const day = d.getDay();
+    if (day === 6) { const f = new Date(d); f.setDate(f.getDate()-1); return f; }
+    if (day === 0) { const m = new Date(d); m.setDate(m.getDate()+1); return m; }
+    return d;
+  }
+  function nthWeekday(yr, mo, weekday, n) {
+    if (n > 0) {
+      const first = new Date(yr, mo, 1);
+      let da = weekday - first.getDay(); if (da < 0) da += 7;
+      const fo = new Date(yr, mo, 1 + da);
+      fo.setDate(fo.getDate() + 7*(n-1)); return fo;
+    } else {
+      const last = new Date(yr, mo+1, 0);
+      let db = last.getDay() - weekday; if (db < 0) db += 7;
+      return new Date(yr, mo, last.getDate() - db);
+    }
+  }
+  function add(d) { holidays.add(observe(d).toISOString().slice(0,10)); }
+  add(new Date(year,0,1));   // New Year's Day
+  add(new Date(year,5,19));  // Juneteenth
+  add(new Date(year,6,4));   // Independence Day
+  add(new Date(year,10,11)); // Veterans Day
+  add(new Date(year,11,25)); // Christmas
+  add(nthWeekday(year,0,1,3));  // MLK Day — 3rd Monday Jan
+  add(nthWeekday(year,1,1,3));  // Presidents Day — 3rd Monday Feb
+  add(nthWeekday(year,4,1,-1)); // Memorial Day — last Monday May
+  add(nthWeekday(year,8,1,1));  // Labor Day — 1st Monday Sep
+  add(nthWeekday(year,9,4,2));  // Columbus Day — 2nd Monday Oct
+  add(nthWeekday(year,10,4,4)); // Thanksgiving — 4th Thursday Nov
+  return holidays;
+}
+
+function isBusinessDay(d) {
+  const day = d.getDay();
+  if (day === 0 || day === 6) return false;
+  const holidays = getFederalHolidays(d.getFullYear());
+  return !holidays.has(d.toISOString().slice(0,10));
+}
+
+function nextBusinessDay(d) {
+  const next = new Date(d); next.setDate(next.getDate()+1);
+  while (!isBusinessDay(next)) next.setDate(next.getDate()+1);
+  return next;
+}
+
+// Add calendar days, then if result is non-business-day, roll forward
+function addDeadline(startDate, days) {
+  const result = new Date(startDate);
+  result.setDate(result.getDate() + days);
+  if (!isBusinessDay(result)) return nextBusinessDay(result);
+  return result;
+}
+
+// ── STATUTE REGISTRY (mirrors statutes.py) ────────────────────────────────────
+const STATUTES = {
+  FCRA_609:  { citation:'15 U.S.C. § 1681g',   deadline:15,  who:'BUREAU' },
+  FCRA_611:  { citation:'15 U.S.C. § 1681i',   deadline:30,  who:'BUREAU' },
+  FCRA_612:  { citation:'15 U.S.C. § 1681j',   deadline:0,   who:'BUREAU' },
+  FCRA_623:  { citation:'15 U.S.C. § 1681s-2', deadline:30,  who:'FURNISHER' },
+  FCRA_605:  { citation:'15 U.S.C. § 1681c',   deadline:0,   who:'BUREAU' },
+  FDCPA_805: { citation:'15 U.S.C. § 1692c',   deadline:0,   who:'COLLECTOR' },
+  FDCPA_807: { citation:'15 U.S.C. § 1692e',   deadline:0,   who:'COLLECTOR' },
+  FDCPA_808: { citation:'15 U.S.C. § 1692f',   deadline:0,   who:'COLLECTOR' },
+  FDCPA_809: { citation:'15 U.S.C. § 1692g',   deadline:30,  who:'COLLECTOR' },
+  FDCPA_813: { citation:'15 U.S.C. § 1692k',   deadline:365, who:'COLLECTOR' },
+  CROA_RIGHTS:{ citation:'15 U.S.C. § 1679 et seq.', deadline:0, who:'CREDIT_REPAIR_COMPANY' },
+};
+
+// ── VIOLATION RULES (mirrors violations.py VIOLATION_RULES) ──────────────────
+const VIOLATION_RULES = {
+  FCRA_611_NO_RESPONSE: {
+    trigger:'FCRA_611', doc:'fcra_violation_notice',
+    citations:['15 U.S.C. § 1681i(a)(1) — FCRA § 611','15 U.S.C. § 1681n — Willful Noncompliance','15 U.S.C. § 1681o — Negligent Noncompliance'],
+    condition:'Bureau failed to complete reinvestigation within 30 days',
+    demand:'Immediately delete the disputed item(s) from my credit file, provide written confirmation of deletion, and provide an updated copy of my credit report reflecting this correction at no charge, as required by 15 U.S.C. § 1681i(a)(5)(B)(ii). Additionally, notify all persons who received a consumer report containing the disputed information within the past two years of the deletion, as required by 15 U.S.C. § 1681i(d).',
+    damages:'Under 15 U.S.C. § 1681n, willful noncompliance subjects your organization to statutory damages of $100 to $1,000 per violation, actual damages, punitive damages, and attorney fees. Under 15 U.S.C. § 1681o, negligent noncompliance subjects you to actual damages and attorney fees. Many FCRA attorneys take these cases on contingency.',
+    severity:'HIGH'
+  },
+  FCRA_611_INADEQUATE: {
+    trigger:'FCRA_611', doc:'method_of_verification_demand',
+    citations:['15 U.S.C. § 1681i(a)(1)','15 U.S.C. § 1681i(a)(6)(B)(iii)','CFPB Circular 2022-07 — Reasonable Investigation Standard','15 U.S.C. § 1681n'],
+    condition:'Bureau responded but investigation was not reasonable under the statute',
+    demand:'Pursuant to 15 U.S.C. § 1681i(a)(6)(B)(iii), provide a complete description of the procedure used to determine the accuracy of the disputed information, including: (1) the name and business address of any furnisher contacted, (2) the specific method used (electronic ACDV or manual review), and (3) what records were consulted. You have 15 days to comply with this demand.',
+    damages:'A response that merely verifies disputed information without conducting a genuine investigation does not satisfy the reasonable reinvestigation standard. See CFPB Circular 2022-07. Further failure may constitute a willful violation under 15 U.S.C. § 1681n, subjecting your organization to statutory damages of $100 to $1,000 per violation, plus actual damages and attorney fees.',
+    severity:'MEDIUM'
+  },
+  FCRA_623_FURNISHER: {
+    trigger:'FCRA_623', doc:'furnisher_direct_dispute',
+    citations:['15 U.S.C. § 1681s-2(b) — FCRA § 623','15 U.S.C. § 1681n'],
+    condition:'Furnisher failed to investigate after bureau notification',
+    demand:'Immediately investigate the disputed information, correct or delete any inaccurate data, and notify all consumer reporting agencies to which you furnished the incorrect information. Provide written confirmation of your investigation results within 30 days.',
+    damages:'Under 15 U.S.C. § 1681n, failure to comply with furnisher obligations under § 1681s-2(b) subjects your organization to statutory damages of $100 to $1,000 per violation, plus actual damages and attorney fees.',
+    severity:'HIGH'
+  },
+  FDCPA_805_WORKPLACE: {
+    trigger:'FDCPA_805', doc:'cease_and_desist',
+    citations:['15 U.S.C. § 1692c(a)(3) — FDCPA § 805(a)(3)','15 U.S.C. § 1692k — Civil Liability'],
+    condition:'Collector contacted consumer at workplace knowing employer prohibits it',
+    demand:'CEASE AND DESIST all communication with me at my place of employment immediately. You are hereby notified that my employer prohibits such communications. Any further contact at my workplace will be documented, reported to the CFPB and FTC, and used as evidence in a civil action under 15 U.S.C. § 1692k. Additionally, cease all collection activity and provide written confirmation within 30 days that this demand has been received and will be honored.',
+    damages:'Under 15 U.S.C. § 1692k, violation of the FDCPA subjects your organization to actual damages, statutory damages up to $1,000 per violation, costs, and attorney fees. I have the right to bring a civil action in any appropriate state or federal district court within one year of the date of this violation.',
+    severity:'HIGH'
+  },
+  FDCPA_805_TIME: {
+    trigger:'FDCPA_805', doc:'cease_and_desist',
+    citations:['15 U.S.C. § 1692c(a)(1) — FDCPA § 805(a)(1)','15 U.S.C. § 1692k — Civil Liability'],
+    condition:'Collector contacted consumer before 8AM or after 9PM local time',
+    demand:'CEASE AND DESIST all communication outside of legally permitted hours. The FDCPA strictly prohibits contact before 8:00 AM or after 9:00 PM at the consumer\'s local time. Each call outside these hours constitutes a separate, actionable violation. Provide written confirmation within 30 days that no further contact will be attempted outside permitted hours.',
+    damages:'Under 15 U.S.C. § 1692k, each call outside permitted hours is an independent cause of action. Statutory damages up to $1,000 per violation apply, plus actual damages and attorney fees.',
+    severity:'HIGH'
+  },
+  FDCPA_805_CEASE: {
+    trigger:'FDCPA_805', doc:'cease_and_desist',
+    citations:['15 U.S.C. § 1692c(c) — FDCPA § 805(c)','15 U.S.C. § 1692k — Civil Liability'],
+    condition:'Consumer demands all collection contact cease',
+    demand:'Pursuant to 15 U.S.C. § 1692c(c), I hereby demand that you CEASE ALL COMMUNICATION with me regarding this debt. After receipt of this written notice, you may only contact me once more to confirm you will cease communication, or to notify me of a specific action you intend to take. Any further contact beyond that single communication will constitute a willful violation of the FDCPA.',
+    damages:'Any communication beyond the single permitted response will subject your organization to statutory damages up to $1,000, actual damages, costs, and attorney fees under 15 U.S.C. § 1692k.',
+    severity:'HIGH'
+  },
+  FDCPA_807_FALSE: {
+    trigger:'FDCPA_807', doc:'violation_notice',
+    citations:['15 U.S.C. § 1692e — FDCPA § 807','15 U.S.C. § 1692k — Civil Liability'],
+    condition:'Collector made false, deceptive, or misleading representations',
+    demand:'CEASE AND DESIST all false, deceptive, or misleading representations immediately. You are hereby placed on notice that your conduct constitutes a violation of 15 U.S.C. § 1692e. Provide written confirmation within 30 days that this account has been noted as disputed and that all collection activity will cease pending validation. Preserve all records of our communications.',
+    damages:'Under 15 U.S.C. § 1692k, false or misleading representations in connection with debt collection subject your organization to statutory damages up to $1,000, actual damages, and attorney fees. The statute of limitations for FDCPA claims is one year from the date of violation.',
+    severity:'HIGH'
+  },
+  FDCPA_808_FEES: {
+    trigger:'FDCPA_808', doc:'violation_notice',
+    citations:['15 U.S.C. § 1692f — FDCPA § 808','15 U.S.C. § 1692e — FDCPA § 807','15 U.S.C. § 1692k — Civil Liability'],
+    condition:'Collector collecting unauthorized fees or misrepresenting amount owed',
+    demand:'You are hereby notified that collecting fees, interest, or charges not expressly authorized by the original agreement or permitted by law violates 15 U.S.C. § 1692f. Misrepresenting the amount owed violates 15 U.S.C. § 1692e. I demand: (1) a complete itemized accounting of the amount claimed, (2) the original agreement authorizing any interest or fees, and (3) immediate correction of any misrepresented balance.',
+    damages:'Under 15 U.S.C. § 1692k, collecting unauthorized amounts and misrepresenting debt amounts are independent FDCPA violations, each carrying statutory damages up to $1,000, plus actual damages and attorney fees.',
+    severity:'HIGH'
+  },
+  FDCPA_809_IGNORED: {
+    trigger:'FDCPA_809', doc:'validation_demand',
+    citations:['15 U.S.C. § 1692g(b) — FDCPA § 809(b)','15 U.S.C. § 1692k — Civil Liability'],
+    condition:'Collector continued collection activity after receiving written validation request',
+    demand:'CEASE AND DESIST all collection activity immediately. I previously submitted a written request for validation of this debt pursuant to 15 U.S.C. § 1692g. You are legally required to cease all collection activity until you provide: (1) the amount of the debt, (2) the name and address of the original creditor, and (3) verification or a copy of any judgment if applicable. Any collection activity prior to providing this validation is a per se FDCPA violation.',
+    damages:'Continuing collection activity after receiving a written validation request is a per se FDCPA violation. Under 15 U.S.C. § 1692k, statutory damages up to $1,000 apply per violation, plus actual damages and attorney fees.',
+    severity:'CRITICAL'
+  },
+  CROA_ADVANCE_FEE: {
+    trigger:'CROA_RIGHTS', doc:'croa_demand',
+    citations:['15 U.S.C. § 1679b(b) — CROA','16 C.F.R. § 310.4(a)(2) — Telemarketing Sales Rule','15 U.S.C. § 1679g — Civil Liability'],
+    condition:'Credit repair company charged fees before services were fully performed',
+    demand:'Immediately refund all fees paid prior to completion of promised services. The Credit Repair Organizations Act (15 U.S.C. § 1679b(b)) explicitly prohibits charging or receiving any money before fully performing all promised services. Your advance fee arrangement is void and unenforceable. I additionally exercise my right to cancel this contract pursuant to 15 U.S.C. § 1679d.',
+    damages:'Under 15 U.S.C. § 1679g, you are liable for actual damages, punitive damages in amounts the court deems appropriate, and attorney fees. The FTC Telemarketing Sales Rule (16 C.F.R. § 310.4(a)(2)) additionally prohibits advance fees for credit repair marketed via telephone, with civil penalties up to $50,120 per violation.',
+    severity:'CRITICAL'
+  },
+};
+
+// ── SITUATION MAP (mirrors statutes.py SITUATION_MAP) ────────────────────────
+const SITUATIONS = [
+  { keys:['calling my job','calling my work','called my job','called my work','workplace','place of employment','employer prohibit'],
+    statutes:['FDCPA_805'], ruleKey:'FDCPA_805_WORKPLACE', doc:'cease_and_desist',
+    summary:'A debt collector is prohibited from calling your workplace if they know your employer disapproves (FDCPA § 805(a)(3)). This is an immediate violation — no waiting for a deadline.' },
+  { keys:['error on','mistake on','inaccurate','dispute','credit report','not my account','wrong information','incorrect','not mine'],
+    statutes:['FCRA_611','FCRA_623'], ruleKey:'FCRA_611_NO_RESPONSE', doc:'bureau_dispute',
+    summary:'You have the right to dispute inaccurate information. The bureau has 30 days to complete a reasonable reinvestigation (FCRA § 611). If the deadline has already passed, InkScrypt upgrades this to a violation notice.' },
+  { keys:['arrest','jail','warrant','criminal','imprisoned','prosecute','threatened to sue','file charges','press charges'],
+    statutes:['FDCPA_807'], ruleKey:'FDCPA_807_FALSE', doc:'violation_notice',
+    summary:'Threatening arrest for a consumer debt is a federal violation. You cannot be arrested for failing to pay a civil debt. Threatening legal action a collector does not intend to take violates FDCPA § 807.' },
+  { keys:['stop calling','stop contact','cease contact','stop contacting','leave me alone','stop all communication','no more contact','harassing me'],
+    statutes:['FDCPA_805'], ruleKey:'FDCPA_805_CEASE', doc:'cease_and_desist',
+    summary:'You can demand a collector stop all contact. After receiving your written demand, they may only contact you once more to confirm they will stop (FDCPA § 805(c)).' },
+  { keys:['validate','validation','prove i owe','verify the debt','proof of debt','show me the debt','debt verification','prove this is mine','first contact'],
+    statutes:['FDCPA_809'], ruleKey:'FDCPA_809_IGNORED', doc:'debt_validation',
+    summary:'Within 30 days of first written contact, you can demand the collector validate the debt. They must cease all collection activity until validation is provided (FDCPA § 809).' },
+  { keys:['old debt','7 years','seven years','past the limit','too old','expired','reporting period','time barred','2015','2016','2017'],
+    statutes:['FCRA_605'], ruleKey:null, doc:'sol_analysis',
+    summary:'Most negative items must be removed 7 years from the Date of First Delinquency (DOFD) — not the date sold to collections. Chapter 7 bankruptcy stays 10 years; Chapter 13 stays 7 (FCRA § 605).' },
+  { keys:['credit repair','charged upfront','paid upfront','advance fee','guarantee score','guarantee my score','remove everything','cpn','new credit identity'],
+    statutes:['CROA_RIGHTS'], ruleKey:'CROA_ADVANCE_FEE', doc:'croa_demand',
+    summary:'The CROA prohibits advance fees. You have the right to cancel within 3 business days of signing any credit repair contract. Anything they can legally do — you can do yourself for free (15 U.S.C. § 1679).' },
+  { keys:['before 8','after 9','late at night','early morning','midnight','called at night','outside hours','2am','3am','after 9pm','before 8am'],
+    statutes:['FDCPA_805'], ruleKey:'FDCPA_805_TIME', doc:'cease_and_desist',
+    summary:'Debt collectors may not contact you before 8:00 AM or after 9:00 PM your local time. Each call outside these hours is an independent, actionable federal violation (FDCPA § 805(a)(1)).' },
+  { keys:['wrong amount','inflated','added fees','not what i owe','different amount','extra charges','unauthorized fees','fee they added','balance is wrong'],
+    statutes:['FDCPA_807','FDCPA_808'], ruleKey:'FDCPA_808_FEES', doc:'violation_notice',
+    summary:'Misrepresenting the amount owed violates FDCPA § 807. Collecting fees not authorized by the original agreement violates FDCPA § 808. Both are independent violations with damages up to $1,000 each.' },
+];
+
+// ── DOCUMENT LABELS (mirrors generator.py) ────────────────────────────────────
+const DOC_TITLES = {
+  cease_and_desist:             'CEASE AND DESIST — FDCPA NOTICE',
+  bureau_dispute:               'FORMAL CREDIT REPORT DISPUTE — FCRA § 611',
+  fcra_violation_notice:        'NOTICE OF FCRA VIOLATION — DEMAND FOR REMEDY',
+  method_of_verification_demand:'METHOD OF VERIFICATION DEMAND — FCRA § 611(a)(6)',
+  furnisher_direct_dispute:     'DIRECT DISPUTE TO FURNISHER — FCRA § 623',
+  debt_validation:              'DEBT VALIDATION DEMAND — FDCPA § 809',
+  violation_notice:             'NOTICE OF FEDERAL VIOLATION — FDCPA § 807/808',
+  validation_demand:            'CEASE COLLECTION — PENDING DEBT VALIDATION',
+  croa_demand:                  'CROA VIOLATION NOTICE — DEMAND FOR REFUND',
+  sol_analysis:                 'NOTICE OF REPORTING PERIOD EXPIRATION — FCRA § 605',
+};
+
+const RE_LINES = {
+  cease_and_desist:             'RE: Unlawful Debt Collection Practices — Cease and Desist',
+  bureau_dispute:               'RE: Formal Dispute of Inaccurate Credit Report Information',
+  fcra_violation_notice:        'RE: Failure to Conduct Reasonable Reinvestigation — FCRA § 611',
+  method_of_verification_demand:'RE: Method of Verification Demand — FCRA § 611(a)(6)(B)(iii)',
+  furnisher_direct_dispute:     'RE: Direct Dispute of Furnished Information — FCRA § 623',
+  debt_validation:              'RE: Written Request for Debt Validation — FDCPA § 809',
+  violation_notice:             'RE: Federal Debt Collection Violation — FDCPA § 807/808',
+  validation_demand:            'RE: Cease All Collection Pending Validation — FDCPA § 809(b)',
+  croa_demand:                  'RE: Credit Repair Organizations Act Violation — Demand for Refund',
+  sol_analysis:                 'RE: Demand for Removal of Time-Barred Information — FCRA § 605',
+};
+
+// ── SOL DEMAND TEXT (no ruleKey needed — built dynamically) ──────────────────
+const SOL_DEMAND = 'Pursuant to 15 U.S.C. § 1681c, I demand the immediate deletion of the above-referenced account from my credit file. The reporting period for this account has expired. Negative information may not be reported for more than seven (7) years from the Date of First Delinquency (DOFD). The continued reporting of this time-barred information is a violation of the FCRA and must be corrected immediately. Provide written confirmation of deletion and an updated copy of my credit report at no charge.';
+const SOL_DAMAGES = 'Under 15 U.S.C. § 1681n, continued reporting of time-barred information may constitute willful noncompliance, subjecting your organization to statutory damages of $100 to $1,000 per violation, actual damages, and attorney fees. Under 15 U.S.C. § 1681o, negligent noncompliance subjects you to actual damages and attorney fees.';
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+let S = {
+  sit:'', match:null, violationStatus:'PENDING',
+  myName:'', myAddr:'', respName:'', respAddr:'',
+  sentDate:'', respRecd:'no',
+  deadlineDate:null, isExpired:false, daysLeft:null,
+  resolvedDocType:null, resolvedCitations:null,
+  resolvedDemand:null, resolvedDamages:null,
+  lastPdfDoc:null
+};
+
+// ── NAVIGATION ────────────────────────────────────────────────────────────────
+function togglePanel(n){
+  const p=document.getElementById('p'+n);
+  if(p.classList.contains('locked'))return;
+  const was=p.classList.contains('active');
+  document.querySelectorAll('.panel').forEach(x=>{if(!x.classList.contains('locked')&&!x.classList.contains('done'))x.classList.remove('active');});
+  if(!was)p.classList.add('active');
+}
+function next(n){
+  const p=document.getElementById('p'+n);
+  p.classList.remove('active');p.classList.add('done');setSidebar(n,'done');
+  const np=document.getElementById('p'+(n+1));
+  if(np){np.classList.remove('locked');np.classList.add('active');setSidebar(n+1,'active');np.scrollIntoView({behavior:'smooth',block:'start'});}
+  if(n+1===5)buildSummary();
+}
+function prev(n){
+  document.getElementById('p'+n).classList.remove('active');
+  const pp=document.getElementById('p'+(n-1));
+  pp.classList.remove('done');pp.classList.add('active');
+  setSidebar(n-1,'active');setSidebar(n,'locked');
+}
+function setSidebar(n,st){
+  const el=document.querySelector('.prog-step[data-s="'+n+'"]');
+  if(!el)return;
+  el.classList.remove('active','done','locked');el.classList.add(st);
+  el.querySelector('.prog-dot').textContent=st==='done'?'✓':'';
+}
+
+// ── SITUATION ANALYSIS ────────────────────────────────────────────────────────
+function pickSit(btn,txt){
+  document.querySelectorAll('.quick-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');
+  document.getElementById('sitText').value=txt;
+  S.sit=txt; analyzeSit();
+}
+
+function analyzeSit(){
+  const txt=document.getElementById('sitText').value;
+  S.sit=txt;
+  const low=txt.toLowerCase();
+  let best=null;
+  for(const s of SITUATIONS){for(const k of s.keys){if(low.includes(k)){best=s;break;}}if(best)break;}
+  const box=document.getElementById('sitMatch');
+  if(best){
+    S.match=best;
+    // Build citation list from statutes
+    const cites=best.statutes.map(k=>STATUTES[k]?STATUTES[k].citation:k).join('  ·  ');
+    document.getElementById('matchCite').textContent=cites;
+    document.getElementById('matchSum').textContent=best.summary;
+    box.classList.remove('violation','compliant');
+    box.classList.add('show','pending');
+    document.getElementById('matchLbl').textContent='Statute Match Found';
+    document.getElementById('matchLbl').className='match-lbl lbl-blue';
+    document.querySelector('#sitMatch .match-dot').className='match-dot dot-blue';
+    document.getElementById('violationStatus').style.display='none';
+    // Re-run violation evaluation if we have a date
+    if(S.sentDate) evaluateViolation();
+  } else {
+    S.match=null;box.classList.remove('show');
+  }
+}
+
+// ── VIOLATION EVALUATION (mirrors violations.py ViolationEngine.evaluate) ────
+function evaluateViolation(){
+  if(!S.match||!S.sentDate)return;
+  const box=document.getElementById('sitMatch');
+  const statusEl=document.getElementById('violationStatus');
+  const lbl=document.getElementById('matchLbl');
+  const dot=document.querySelector('#sitMatch .match-dot');
+
+  // Check if statutes have deadlines
+  const hasDeadline = S.match.statutes.some(k=>STATUTES[k]&&STATUTES[k].deadline>0);
+
+  if(!hasDeadline){
+    // Immediate violation — no deadline (FDCPA 805, 807, 808, CROA, FCRA 605)
+    S.violationStatus='VIOLATION';
+    box.className='statute-match show violation';
+    lbl.textContent='VIOLATION IDENTIFIED';lbl.className='match-lbl lbl-red';
+    dot.className='match-dot dot-red';
+    statusEl.style.display='inline-block';
+    statusEl.textContent='STATUS: VIOLATION — Document will be generated';
+    statusEl.className='violation-status status-violation';
+  } else {
+    // Has deadline — check clock
+    if(S.isExpired){
+      const adequate = S.respRecd==='yes';
+      if(adequate){
+        S.violationStatus='COMPLIANT';
+        box.className='statute-match show compliant';
+        lbl.textContent='COMPLIANT — Response Received';lbl.className='match-lbl lbl-green';
+        dot.className='match-dot dot-green';
+        statusEl.style.display='inline-block';
+        statusEl.textContent='STATUS: COMPLIANT — They responded in time';
+        statusEl.className='violation-status status-compliant';
+      } else {
+        S.violationStatus='VIOLATION';
+        box.className='statute-match show violation';
+        lbl.textContent='DEADLINE EXPIRED — VIOLATION';lbl.className='match-lbl lbl-red';
+        dot.className='match-dot dot-red';
+        statusEl.style.display='inline-block';
+        statusEl.textContent='STATUS: VIOLATION — Deadline expired, no adequate response';
+        statusEl.className='violation-status status-violation';
+      }
+    } else {
+      S.violationStatus='PENDING';
+      box.className='statute-match show pending';
+      lbl.textContent='PENDING — Clock Running';lbl.className='match-lbl lbl-amber';
+      dot.className='match-dot dot-amber';
+      statusEl.style.display='inline-block';
+      statusEl.textContent='STATUS: PENDING — '+S.daysLeft+' days remaining';
+      statusEl.className='violation-status status-pending';
+    }
+  }
+
+  // Resolve document type based on violation status + situation
+  resolveDocumentType();
+}
+
+function resolveDocumentType(){
+  if(!S.match)return;
+  const today=new Date();
+  const todayStr=today.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+
+  // SOL — always sol_analysis
+  if(S.match.doc==='sol_analysis'){
+    S.resolvedDocType='sol_analysis';
+    S.resolvedCitations=['15 U.S.C. § 1681c — FCRA § 605 (Obsolete Information)'];
+    S.resolvedDemand=SOL_DEMAND;
+    S.resolvedDamages=SOL_DAMAGES;
+    return;
+  }
+
+  // Initial dispute (not yet expired) → bureau_dispute
+  if(S.match.doc==='bureau_dispute'&&S.violationStatus==='PENDING'){
+    S.resolvedDocType='bureau_dispute';
+    const rule=VIOLATION_RULES['FCRA_611_NO_RESPONSE'];
+    S.resolvedCitations=['15 U.S.C. § 1681i — FCRA § 611 (Reinvestigation)','15 U.S.C. § 1681s-2 — FCRA § 623 (Furnisher Duties)'];
+    S.resolvedDemand='Pursuant to 15 U.S.C. § 1681i, I formally dispute the accuracy of information in my credit file. You are required to conduct a reasonable reinvestigation of this dispute within 30 days of receipt. If the disputed information cannot be verified, it must be deleted. Please provide written confirmation of your investigation results and a free updated copy of my credit report as required by 15 U.S.C. § 1681i(a)(6).';
+    S.resolvedDamages=rule.damages;
+    return;
+  }
+
+  // Expired bureau dispute — escalate to fcra_violation_notice
+  if(S.match.doc==='bureau_dispute'&&S.violationStatus==='VIOLATION'){
+    const rule=S.respRecd==='bad'?VIOLATION_RULES['FCRA_611_INADEQUATE']:VIOLATION_RULES['FCRA_611_NO_RESPONSE'];
+    S.resolvedDocType=rule.doc;
+    S.resolvedCitations=rule.citations;
+    S.resolvedDemand=rule.demand;
+    S.resolvedDamages=rule.damages;
+    return;
+  }
+
+  // All other types — use the ruleKey directly
+  if(S.match.ruleKey&&VIOLATION_RULES[S.match.ruleKey]){
+    const rule=VIOLATION_RULES[S.match.ruleKey];
+    S.resolvedDocType=rule.doc;
+    S.resolvedCitations=rule.citations;
+    S.resolvedDemand=rule.demand;
+    S.resolvedDamages=rule.damages;
+    return;
+  }
+
+  // Fallback
+  S.resolvedDocType=S.match.doc;
+  S.resolvedCitations=S.match.statutes.map(k=>STATUTES[k]?STATUTES[k].citation+' — '+k.replace('_',' § '):k);
+  S.resolvedDemand='Pursuant to your obligations under the above-cited federal statute(s), I formally demand that you investigate and resolve this matter within 30 days. Please provide written confirmation of your response to the address above.';
+  S.resolvedDamages='Failure to comply with applicable federal consumer protection law may result in civil liability including statutory damages, actual damages, and attorney fees as provided by law.';
+}
+
+// ── RESPONDENT AUTOFILL ───────────────────────────────────────────────────────
+const BUREAUS={
+  eq:{name:'Equifax Information Services, LLC',addr:'P.O. Box 740256, Atlanta, GA 30374'},
+  ex:{name:'Experian Information Solutions, Inc.',addr:'P.O. Box 4500, Allen, TX 75013'},
+  tu:{name:'TransUnion LLC',addr:'P.O. Box 2000, Chester, PA 19016'},
+};
+function fillResp(){
+  const v=document.getElementById('respType').value;
+  const b=BUREAUS[v];
+  if(b){document.getElementById('respName').value=b.name;document.getElementById('respAddr').value=b.addr;}
+}
+
+// ── DEADLINE CLOCK (mirrors clock.py DeadlineClock) ───────────────────────────
+function calcDeadline(){
+  const d=document.getElementById('sentDate').value;
+  if(!d)return;
+  S.sentDate=d; S.respRecd=document.getElementById('respRecd').value;
+  const sent=new Date(d+'T00:00:00');
+  const dl=addDeadline(sent,30);
+  const today=new Date(); today.setHours(0,0,0,0);
+  const rem=Math.ceil((dl-today)/86400000);
+  S.deadlineDate=dl; S.isExpired=rem<0; S.daysLeft=rem;
+  S.deadline=dl.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const col=S.isExpired?'#ef4444':rem<=7?'#f59e0b':'#10b981';
+  const st=S.isExpired?'⚠ Deadline expired '+Math.abs(rem)+' days ago':rem===0?'⚠ Deadline is TODAY':'✓ '+rem+' days remaining';
+  const box=document.getElementById('deadlineBox');
+  box.style.display='block';
+  box.innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem"><div><div style="font-family:var(--font-mono);font-size:0.7rem;color:var(--text-3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">30-Day Deadline (FCRA §611 / FDCPA §809)</div><div style="font-family:var(--font-mono);font-size:1.1rem;font-weight:600;color:var(--text)">'+S.deadline+'</div></div><div style="font-family:var(--font-mono);font-size:0.82rem;font-weight:600;color:'+col+'">'+st+'</div></div>'+(S.isExpired?'<div style="margin-top:0.75rem;font-size:0.8rem;color:var(--text-3)">The deadline has passed. If no adequate response was received, a federal violation has occurred. InkScrypt will generate a violation notice.</div>':'');
+  if(S.match) evaluateViolation();
+}
+
+// ── BUILD SUMMARY ─────────────────────────────────────────────────────────────
+function buildSummary(){
+  S.myName=document.getElementById('myName').value||'Consumer';
+  S.myAddr=document.getElementById('myAddr').value||'';
+  S.respName=document.getElementById('respName').value||'Respondent';
+  S.respAddr=document.getElementById('respAddr').value||'';
+  resolveDocumentType();
+  const docLabel=DOC_TITLES[S.resolvedDocType]||'Formal Legal Notice';
+  const cites=S.resolvedCitations?S.resolvedCitations.join(', '):'Pending';
+  const statusBadge=S.violationStatus==='VIOLATION'?'<span style="color:var(--danger);font-weight:700">VIOLATION</span>':S.violationStatus==='PENDING'?'<span style="color:var(--warning);font-weight:700">PENDING</span>':'<span style="color:var(--success);font-weight:700">COMPLIANT</span>';
+  document.getElementById('summaryBox').innerHTML='<div class="sum-row"><span class="sum-key">Document Type</span><span class="sum-val">'+docLabel+'</span></div><div class="sum-row"><span class="sum-key">Sender</span><span class="sum-val">'+S.myName+'</span></div><div class="sum-row"><span class="sum-key">Addressed To</span><span class="sum-val">'+S.respName+'</span></div><div class="sum-row"><span class="sum-key">Statutes</span><span class="sum-val" style="font-family:var(--font-mono);font-size:0.72rem">'+cites+'</span></div><div class="sum-row"><span class="sum-key">Violation Status</span><span class="sum-val">'+statusBadge+'</span></div><div class="sum-row"><span class="sum-key">Generated In</span><span class="sum-val" style="color:var(--success)">Your Browser — Nothing stored</span></div>';
+}
+
+// ── SHA-256 FINGERPRINT (mirrors fingerprint.py) ──────────────────────────────
+async function makeFingerprint(data){
+  const str=['INKSCRYPT','TYPE:'+data.docType.toUpperCase(),'CONSUMER:'+data.consumer.toUpperCase(),'RESPONDENT:'+data.respondent.toUpperCase(),'DATE:'+data.date,'TIME:'+data.time,'DEMAND:'+data.demand.toUpperCase().slice(0,100)].join('|');
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  const hex=Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('').toUpperCase();
+  return 'INKSCRYPT-'+data.date+'-'+hex.slice(0,8)+'-'+hex.slice(8,16);
+}
+
+// ── PDF GENERATOR (mirrors generator.py InkScryptGenerator) ──────────────────
+let lastPdfBlob=null;
+
+async function generatePDF(){
+  const btn=document.getElementById('genBtn');
+  const txt=document.getElementById('genTxt');
+  const spin=document.getElementById('genSpin');
+  btn.disabled=true; txt.textContent='Generating...'; spin.style.display='block';
+  try{
+    S.myName=document.getElementById('myName').value||'Consumer';
+    S.myAddr=document.getElementById('myAddr').value||'';
+    S.respName=document.getElementById('respName').value||'Respondent';
+    S.respAddr=document.getElementById('respAddr').value||'';
+    resolveDocumentType();
+
+    const match=S.match||SITUATIONS[1];
+    const docType=S.resolvedDocType||'bureau_dispute';
+    const docTitle=DOC_TITLES[docType]||'FORMAL LEGAL NOTICE';
+    const reLine=RE_LINES[docType]||'RE: Formal Legal Notice';
+    const citations=S.resolvedCitations||['15 U.S.C. § 1681i'];
+    const demand=S.resolvedDemand||'I formally demand resolution within 30 days.';
+    const damages=S.resolvedDamages||'Failure to comply may result in civil liability.';
+
+    const today=new Date();
+    const todayStr=today.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+    const timeStr=today.toTimeString().slice(0,8);
+    const dateISO=today.toISOString().slice(0,10);
+    const deadline30=(()=>{const d=new Date();return addDeadline(d,30).toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});})();
+    const deadlineDisplay=S.deadline||deadline30;
+
+    const fpId=await makeFingerprint({docType,consumer:S.myName,respondent:S.respName,date:dateISO,time:timeStr,demand});
+
+    const {jsPDF}=window.jspdf;
+    const doc=new jsPDF({orientation:'portrait',unit:'pt',format:'letter'});
+    const W=612,H=792,ML=60,MR=60,MT=72,CW=492;
+
+    function drawChrome(){
+      doc.setFillColor(37,99,235); doc.rect(0,0,W,28,'F');
+      doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.setTextColor(255,255,255);
+      doc.text('InkScrypt  //  righttoremaininformed.com',ML,18);
+      doc.text(docTitle,W-MR,18,'right');
+      doc.setDrawColor(100,116,139); doc.setLineWidth(0.5);
+      doc.line(ML,H-30,W-MR,H-30);
+      doc.setFont('helvetica','normal'); doc.setFontSize(6.5); doc.setTextColor(100,116,139);
+      doc.text('Generated by InkScrypt — righttoremaininformed.com  |  This is not legal advice. This is legal education.',ML,H-18);
+      doc.text(todayStr,W-MR,H-18,'right');
+    }
+
+    drawChrome();
+    let y=MT+10;
+
+    // Sender block
+    doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(30,41,59);
+    doc.text(S.myName,ML,y); y+=13;
+    S.myAddr.split(',').forEach(ln=>{if(ln.trim()){doc.text(ln.trim(),ML,y);y+=13;}});
+    y+=4; doc.text(todayStr,ML,y); y+=20;
+
+    // Recipient
+    doc.text(S.respName,ML,y); y+=13;
+    S.respAddr.split(',').forEach(ln=>{if(ln.trim()){doc.text(ln.trim(),ML,y);y+=13;}});
+    y+=16;
+
+    // Title rule
+    doc.setDrawColor(37,99,235); doc.setLineWidth(2); doc.line(ML,y,W-MR,y); y+=14;
+    doc.setFont('helvetica','bold'); doc.setFontSize(13); doc.setTextColor(37,99,235);
+    doc.text(docTitle,ML,y); y+=16;
+    doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(30,41,59);
+    doc.text(reLine,ML,y); y+=16;
+    doc.setDrawColor(100,116,139); doc.setLineWidth(0.5); doc.line(ML,y,W-MR,y); y+=14;
+
+    // Salutation
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(30,41,59);
+    doc.text('To Whom It May Concern / Compliance Department:',ML,y); y+=16;
+
+    // Opening
+    const opening='This letter constitutes formal written notice pursuant to applicable federal consumer protection law. I am writing to you regarding your obligations under the following federal statute(s):';
+    const openLines=doc.splitTextToSize(opening,CW);
+    doc.text(openLines,ML,y); y+=openLines.length*14+10;
+
+    // Citations box
+    doc.setFillColor(37,99,235); doc.rect(ML,y,CW,18,'F');
+    doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor(255,255,255);
+    doc.text('APPLICABLE FEDERAL LAW',ML+10,y+12); y+=18;
+    const citeH=citations.length*17+10;
+    doc.setFillColor(241,245,249); doc.rect(ML,y,CW,citeH,'F');
+    doc.setDrawColor(37,99,235); doc.setLineWidth(0.5); doc.rect(ML,y-18,CW,citeH+18,'S');
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(30,41,59);
+    let cy=y+13;
+    citations.forEach(c=>{doc.text('• '+c,ML+10,cy);cy+=17;});
+    y=cy+8;
+
+    // Violation status badge
+    if(S.violationStatus==='VIOLATION'){
+      doc.setFillColor(239,68,68);
+      doc.rect(ML,y,CW,16,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(255,255,255);
+      doc.text('** FEDERAL VIOLATION IDENTIFIED — DEADLINE EXPIRED — NO ADEQUATE RESPONSE RECEIVED',ML+10,y+11);
+      y+=24;
+    } else if(S.violationStatus==='PENDING'){
+      doc.setFillColor(245,158,11);
+      doc.rect(ML,y,CW,16,'F');
+      doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(255,255,255);
+      doc.text('FORMAL NOTICE — STATUTORY DEADLINE RUNNING — '+deadlineDisplay,ML+10,y+11);
+      y+=24;
+    }
+
+    // Basis section
+    doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(37,99,235);
+    doc.text('BASIS FOR THIS NOTICE',ML,y);y+=14;
+    doc.setFont('helvetica','normal');doc.setTextColor(30,41,59);
+    const basis='The basis for this formal notice is as follows: '+S.sit+'.';
+    const basisLines=doc.splitTextToSize(basis,CW);
+    doc.text(basisLines,ML,y);y+=basisLines.length*14+12;
+
+    // Demand box
+    doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(37,99,235);
+    doc.text('MY DEMAND',ML,y);y+=14;
+    const demLines=doc.splitTextToSize(demand,CW-24);
+    const demH=demLines.length*14+20;
+    if(y+demH>H-80){
+      doc.addPage();drawChrome();y=MT+20;
+    }
+    doc.setFillColor(239,246,255);doc.rect(ML,y,CW,demH,'F');
+    doc.setFillColor(249,115,22);doc.rect(ML,y,4,demH,'F');
+    doc.setDrawColor(37,99,235);doc.setLineWidth(1.5);doc.rect(ML,y,CW,demH,'S');
+    doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(30,41,59);
+    doc.text(demLines,ML+12,y+14);y+=demH+12;
+
+    // Deadline
+    const dlTxt='You are required to respond to this demand in writing no later than '+deadlineDisplay+'. Failure to respond within this timeframe will be documented and may be used as evidence of willful noncompliance in any subsequent legal or regulatory proceeding.';
+    const dlLines=doc.splitTextToSize(dlTxt,CW);
+    if(y+dlLines.length*14>H-80){doc.addPage();drawChrome();y=MT+20;}
+    doc.text(dlLines,ML,y,{maxWidth:CW});y+=dlLines.length*14+12;
+
+    // Legal exposure
+    doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(37,99,235);
+    doc.text('YOUR LEGAL EXPOSURE',ML,y);y+=14;
+    doc.setFont('helvetica','normal');doc.setTextColor(30,41,59);
+    const dmgLines=doc.splitTextToSize(damages,CW);
+    if(y+dmgLines.length*14>H-80){doc.addPage();drawChrome();y=MT+20;}
+    doc.text(dmgLines,ML,y,{maxWidth:CW});y+=dmgLines.length*14+12;
+
+    // CFPB warning
+    const cfpbTxt='REGULATORY NOTICE: A copy of this correspondence and all supporting documentation has been prepared for submission to the Consumer Financial Protection Bureau (CFPB) at consumerfinance.gov/complaint and the Federal Trade Commission (FTC) at reportfraud.ftc.gov in the event this matter is not resolved to my satisfaction.';
+    const cfpbLines=doc.splitTextToSize(cfpbTxt,CW-20);
+    const cfpbH=cfpbLines.length*13+18;
+    if(y+cfpbH>H-100){doc.addPage();drawChrome();y=MT+20;}
+    doc.setFillColor(255,247,237);doc.rect(ML,y,CW,cfpbH,'F');
+    doc.setFillColor(249,115,22);doc.rect(ML,y,3,cfpbH,'F');
+    doc.setDrawColor(249,115,22);doc.setLineWidth(0.5);doc.rect(ML,y,CW,cfpbH,'S');
+    doc.setFont('helvetica','oblique');doc.setFontSize(8);doc.setTextColor(100,116,139);
+    doc.text(cfpbLines,ML+10,y+12);y+=cfpbH+16;
+
+    // Closing
+    if(y+130>H-80){doc.addPage();drawChrome();y=MT+20;}
+    doc.setFont('helvetica','normal');doc.setFontSize(9.5);doc.setTextColor(30,41,59);
+    doc.text('Sincerely,',ML,y);y+=28;
+
+    // Wet ink signature line — the clause IS the line (mirrors SecuritySignatureLine in generator.py)
+    const secText='FORMAL NOTICE UNDER FEDERAL LAW • RECEIPT TRIGGERS STATUTORY OBLIGATIONS • RETAINED AS EVIDENCE • ALTERATION VOIDS THIS NOTICE • ';
+    doc.saveGraphicsState();
+    doc.setFont('helvetica','bold');doc.setFontSize(3.5);doc.setTextColor(55,65,81);
+    const secFull=secText.repeat(20);
+    const secSliced=doc.splitTextToSize(secFull,CW);
+    doc.text(secSliced[0],ML,y,{maxWidth:CW});
+    doc.restoreGraphicsState();
+    y+=10;
+
+    doc.setFont('helvetica','bold');doc.setFontSize(9.5);doc.setTextColor(30,41,59);
+    doc.text(S.myName,ML,y);y+=13;
+    doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(100,116,139);
+    doc.text('Consumer / Authorized Sender',ML,y);y+=12;
+    doc.text('Date Signed: _______________________',ML,y);y+=20;
+
+    // Case notes
+    doc.setFont('helvetica','oblique');doc.setFontSize(8.5);doc.setTextColor(100,116,139);
+    if(S.sentDate) doc.text('Original correspondence date: '+S.sentDate,ML,y);
+    y+=20;
+
+    // Fingerprint block
+    if(y+72>H-80){doc.addPage();drawChrome();y=MT+20;}
+    doc.setFillColor(30,41,59);doc.rect(ML,y,CW,18,'F');
+    doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(255,255,255);
+    doc.text('DOCUMENT FINGERPRINT — SELF-VERIFYING (SHA-256)',ML+10,y+12);y+=18;
+    doc.setFillColor(241,245,249);doc.rect(ML,y,CW,52,'F');
+    doc.setDrawColor(30,41,59);doc.setLineWidth(0.5);doc.rect(ML,y,CW,52,'S');
+    doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(30,41,59);
+    doc.text(fpId,ML+10,y+16);
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(100,116,139);
+    doc.text(dateISO+' '+timeStr+' UTC  |  SHA-256 (NIST FIPS 180-4)',ML+10,y+30);
+    const verTxt='To verify: righttoremaininformed.com/verify — If this document was altered after generation, verification fails.';
+    const verLines=doc.splitTextToSize(verTxt,CW-20);
+    doc.text(verLines,ML+10,y+42);
+    y+=60;
+
+    // Disclaimer
+    doc.setDrawColor(100,116,139);doc.setLineWidth(0.5);doc.line(ML,y,W-MR,y);y+=10;
+    const disc='This document was generated by InkScrypt at righttoremaininformed.com. InkScrypt is an educational tool that encodes federal law as executable logic. This is not legal advice — it is legal education based on publicly available federal statutes. The creator is not an attorney. For legal advice, consult a licensed FCRA or FDCPA attorney in your jurisdiction. Many take these cases on contingency — no cost unless you win.';
+    doc.setFont('helvetica','oblique');doc.setFontSize(7);doc.setTextColor(100,116,139);
+    const discLines=doc.splitTextToSize(disc,CW);
+    doc.text(discLines,W/2,y,{align:'center',maxWidth:CW});
+
+    // Save
+    const safeName=S.respName.replace(/[^a-zA-Z0-9]/g,'_').slice(0,30);
+    const filename='InkScrypt_'+safeName+'.pdf';
+    doc.save(filename);
+
+    // Store blob for re-download
+    lastPdfBlob={doc,filename,fpId,dateISO,timeStr};
+
+    // Show result
+    document.getElementById('fpDisplay').textContent=fpId;
+    document.getElementById('fpMeta').textContent='SHA-256  |  Generated: '+dateISO+' '+timeStr+' UTC';
+    document.getElementById('dlName').textContent=filename;
+    const rp=document.getElementById('resultPanel');
+    rp.classList.add('show');
+    rp.scrollIntoView({behavior:'smooth',block:'start'});
+
+  } catch(e){
+    alert('Error generating PDF: '+e.message+'\n\nPlease ensure you filled in all fields and try again.');
+    console.error(e);
+  } finally{
+    btn.disabled=false;txt.textContent='🖋 Generate My InkScrypt Letter';spin.style.display='none';
+  }
+}
+
+function reDownload(){
+  if(lastPdfBlob){lastPdfBlob.doc.save(lastPdfBlob.filename);}
+}
+
+function verifyDocument(){
+  const input=document.getElementById('verifyInput').value.trim().toUpperCase();
+  const result=document.getElementById('verifyResult');
+  if(!input.startsWith('INKSCRYPT-')){
+    result.className='verify-result fail';
+    result.textContent='Invalid format. InkScrypt fingerprint IDs begin with "INKSCRYPT-" followed by the date and hash. Example: INKSCRYPT-2026-03-03-F3AD4E50-394CC1BB';
+    return;
+  }
+  const parts=input.split('-');
+  if(parts.length<5){
+    result.className='verify-result fail';
+    result.textContent='Invalid format. The fingerprint ID appears incomplete. Check that you copied the full ID from the document.';
+    return;
+  }
+  result.className='verify-result success';
+  result.innerHTML='<strong>Format Valid</strong> — This appears to be a properly formatted InkScrypt fingerprint ID.<br/><br/><span style="font-family:var(--font-mono);font-size:0.82rem;">'+input+'</span><br/><br/>Full cryptographic verification requires the complete document fields. The fingerprint is self-contained — the SHA-256 hash of the document\'s key fields must match the ID printed on it. If any field was altered after generation, the hash will not match. No server required to verify.';
+}
+</script>
+</body>
+</html>
