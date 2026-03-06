@@ -257,12 +257,6 @@ That's it. One HTML file. No dependencies to install. No server to configure. Op
 - [x] Decoded companion — 6,500-word field manual, 153 sources
 - [x] Full mobile responsiveness
 
-### In Development
-- [ ] PDF credit report parser — upload and auto-audit for errors
-- [ ] Cross-bureau delta detection — flag inconsistencies across Equifax, Experian, TransUnion
-- [ ] State law layer — Louisiana first, expanding by demand
-- [ ] Statute of Limitations Engine — state-specific SOL logic by debt type
-- [ ] CLI tool — `inkscrypt analyze my_report.pdf`
 
 ---
 
